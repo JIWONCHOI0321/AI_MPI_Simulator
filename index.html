@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>National MPI & AI-MPI Macro Simulator</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #f4f6f9; font-family: 'Malgun Gothic', sans-serif; padding-top: 30px; color: #212529; }
+        .card { border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); margin-bottom: 20px; border: 1px solid #dee2e6; }
+        .section-title { font-size: 0.95rem; font-weight: 700; padding: 6px; border-radius: 3px; text-align: center; margin-bottom: 12px; }
+        .bg-health { background-color: #f8d7da; color: #842029; }
+        .bg-education { background-color: #cfe2ff; color: #084298; }
+        .bg-living { background-color: #d1e7dd; color: #0f5132; }
+        .bg-ai { background-color: #e2d9f3; color: #432874; }
+        .report-panel { background-color: #1e222b; color: #ffffff; padding: 25px; border-radius: 4px; height: 100%; }
+        .stat-value { font-size: 1.8rem; font-weight: 700; color: #ffc107; }
+        .slider-label { font-size: 0.85rem; display: flex; justify-content: space-between; }
+        .instruction-text { font-size: 0.85rem; color: #ced4da; line-height: 1.6; }
+    </style>
+</head>
+<body>
+
+<div class="container-fluid px-4">
+    <div class="mb-4 border-bottom pb-2">
+        <h1 class="h3 fw-bold">국가 단위 다차원 빈곤 지수(MPI) 거시 매개변수 시뮬레이터</h1>
+        <p class="text-muted small">UNDP 실제 국가별 지표 결핍율 수치를 기반으로 가상 가구 매트릭스(N=10,000)를 생성하여 듀얼 패러다임 지수를 실시간 연산합니다.</p>
+    </div>
+
+    <div class="row">
+        <!-- 좌측: 국가 거시 통계 결핍율 제어 (입력부) -->
+        <div class="col-xl-7 col-lg-6">
+            <div class="card p-4">
+                <h5 class="h6 border-bottom pb-2 mb-3 fw-bold text-secondary">국가별 지표별 결핍 확률 설정 (Deprivation Probability)</h5>
+                
+                <div class="row">
+                    <!-- 보건 및 교육 차원 -->
+                    <div class="col-md-6">
+                        <div class="section-title bg-health">보건 차원 (Health)</div>
+                        <div class="mb-3">
+                            <div class="slider-label"><span>영양실조 비율</span><b id="val_nutrition">28%</b></div>
+                            <input type="range" class="form-range" id="prob_nutrition" min="0" max="100" value="28">
+                        </div>
+                        <div class="mb-4">
+                            <div class="slider-label"><span>영유아 사망 발생율</span><b id="val_childMort">6%</b></div>
+                            <input type="range" class="form-range" id="prob_childMort" min="0" max="100" value="6">
+                        </div>
+
+                        <div class="section-title bg-education">교육 차원 (Education)</div>
+                        <div class="mb-3">
+                            <div class="slider-label"><span>취학 연수 미달 비율</span><b id="val_schoolYears">35%</b></div>
+                            <input type="range" class="form-range" id="prob_schoolYears" min="0" max="100" value="35">
+                        </div>
+                        <div class="mb-4">
+                            <div class="slider-label"><span>학령기 아동 결석률</span><b id="val_attendance">22%</b></div>
+                            <input type="range" class="form-range" id="prob_attendance" min="0" max="100" value="22">
+                        </div>
+                    </div>
+
+                    <!-- 생활수준 차원 -->
+                    <div class="col-md-6">
+                        <div class="section-title bg-living">생활수준 차원 (Living Standards)</div>
+                        <div class="mb-2">
+                            <div class="slider-label"><span>취사 연료 결핍율</span><b id="val_fuel">88%</b></div>
+                            <input type="range" class="form-range" id="prob_fuel" min="0" max="100" value="88">
+                        </div>
+                        <div class="mb-2">
+                            <div class="slider-label"><span>위생시설 미비율</span><b id="val_sanitation">72%</b></div>
+                            <input type="range" class="form-range" id="prob_sanitation" min="0" max="100" value="72">
+                        </div>
+                        <div class="mb-2">
+                            <div class="slider-label"><span>식수 접근 불량률</span><b id="val_water">45%</b></div>
+                            <input type="range" class="form-range" id="prob_water" min="0" max="100" value="45">
+                        </div>
+                        <div class="mb-2">
+                            <div class="slider-label"><span>전력 공급 제한율</span><b id="val_electricity">68%</b></div>
+                            <input type="range" class="form-range" id="prob_electricity" min="0" max="100" value="68">
+                        </div>
+                        <div class="mb-2">
+                            <div class="slider-label"><span>주거 환경 취약률(토사 바닥)</span><b id="val_housing">79%</b></div>
+                            <input type="range" class="form-range" id="prob_housing" min="0" max="100" value="79">
+                        </div>
+                        <div class="mb-3">
+                            <div class="slider-label"><span>기초 자산 보유 미달률</span><b id="val_assets">18%</b></div>
+                            <input type="range" class="form-range" id="prob_assets" min="0" max="100" value="18">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- AI 미래 역량 차원 -->
+                <div class="row mt-2">
+                    <div class="col-12">
+                        <div class="section-title bg-ai">AI 미래 역량 차원 (AI & Future Literacy - 연구팀 제안)</div>
+                        <div class="row">
+                            <div class="col-md-6 mb-2">
+                                <div class="slider-label"><span>AI 언어적 소외율 (LLM 편향)</span><b id="val_aiLang">85%</b></div>
+                                <input type="range" class="form-range" id="prob_aiLang" min="0" max="100" value="85">
+                            </div>
+                            <div class="col-md-6 mb-2">
+                                <div class="slider-label"><span>AI 교육 인프라 결핍율</span><b id="val_aiInfra">90%</b></div>
+                                <input type="range" class="form-range" id="prob_aiInfra" min="0" max="100" value="90">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <button class="btn btn-primary fw-bold mt-3" onclick="executeSimulation()">대규모 데이터 세트 연산 실행 (N=10,000)</button>
+            </div>
+        </div>
+
+        <!-- 우측: 대조 분석 리포트 판넬 (출력부) -->
+        <div class="col-xl-5 col-lg-6">
+            <div class="report-panel">
+                <h5 class="h6 text-warning fw-bold border-bottom border-secondary pb-2 mb-4">📊 대규모 몬테카를로 시뮬레이션 연산 결과</h5>
+                
+                <!-- 전통적 MPI 결과 블록 -->
+                <div class="mb-4 bg-dark p-3 rounded border border-secondary">
+                    <h6 class="text-info fw-bold mb-3" style="font-size:0.9rem;">🏛️ [Method 1] 전통적 글로벌 MPI 결과 (UNDP 표준 공식)</h6>
+                    <div class="row text-center">
+                        <div class="col-4"><div class="text-muted small">국가 빈곤율(H)</div><div class="stat-value" id="res_H_c">0.0%</div></div>
+                        <div class="col-4"><div class="text-muted small">결핍 강도(A)</div><div class="stat-value" id="res_A_c">0.0%</div></div>
+                        <div class="col-4"><div class="text-muted small">빈곤 지수(M0)</div><div class="stat-value text-danger" id="res_M0_c">0.0000</div></div>
+                    </div>
+                </div>
+
+                <!-- AI-MPI 결과 블록 -->
+                <div class="mb-4 bg-dark p-3 rounded border border-secondary">
+                    <h6 class="text-purple fw-bold mb-3" style="font-size:0.9rem; color: #bca0dc;">🚀 [Method 2] 확장형 AI-MPI 결과 (본 연구팀 제안 모델)</h6>
+                    <div class="row text-center">
+                        <div class="col-4"><div class="text-muted small">국가 빈곤율(H)</div><div class="stat-value" id="res_H_a">0.0%</div></div>
+                        <div class="col-4"><div class="text-muted small">결핍 강도(A)</div><div class="stat-value" id="res_A_a">0.0%</div></div>
+                        <div class="col-4"><div class="text-muted small">빈곤 지수(M0)</div><div class="stat-value text-danger" id="res_M0_a">0.0000</div></div>
+                    </div>
+                </div>
+
+                <!-- 학술 해석 가이드 -->
+                <div class="mt-4">
+                    <h6 class="text-warning h7 fw-bold mb-2">연구 분석 매커니즘 기술 서술</h6>
+                    <p class="instruction-text mb-0">
+                        본 시스템은 입력된 지표별 결핍 확률에 따라 독립적인 10,000개의 가상 가구 에이전트 행렬을 난수 생성 기법으로 구축합니다. <br>
+                        이후 알카이어-포스터(Alkire-Foster) 매트릭스 연산을 통해 차원별 가중치를 부여하고, 개별 국가 차원의 다차원 빈곤 수치 변동성을 즉각 추정하여 패러다임 전환의 필요성을 증명합니다.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// 슬라이더 조작 시 화면에 실시간 수치 표기 바인딩
+const indicators = ['nutrition', 'childMort', 'schoolYears', 'attendance', 'fuel', 'sanitation', 'water', 'electricity', 'housing', 'assets', 'aiLang', 'aiInfra'];
+indicators.forEach(ind => {
+    const slider = document.getElementById('prob_' + ind);
+    const display = document.getElementById('val_' + ind);
+    slider.addEventListener('input', () => {
+        display.innerText = slider.value + '%';
+    });
+});
+
+function executeSimulation() {
+    const N = 10000;
+    const probs = {};
+    indicators.forEach(ind => {
+        probs[ind] = parseInt(document.getElementById('prob_' + ind).value) / 100;
+    });
+
+    // 10,000 가구의 데이터 매트릭스 생성 (난수 샘플링)
+    const households = [];
+    for(let i=0; i<N; i++) {
+        const hh = {};
+        indicators.forEach(ind => {
+            hh[ind] = Math.random() < probs[ind] ? 1 : 0;
+        });
+        households.push(hh);
+    }
+
+    // 1. 전통형 MPI 계산 (가중치 및 임계치 설정)
+    const w_classic = { nutrition: 1/6, childMort: 1/6, schoolYears: 1/6, attendance: 1/6, fuel: 1/18, sanitation: 1/18, water: 1/18, electricity: 1/18, housing: 1/18, assets: 1/18, aiLang: 0, aiInfra: 0 };
+    const k_classic = 1/3;
+    const res_classic = calculateAF(households, w_classic, k_classic);
+
+    // 2. 확장형 AI-MPI 계산 (4개 차원 균등 25% 적용 후 세부 조정)
+    const w_ai = { nutrition: 0.125, childMort: 0.125, schoolYears: 0.125, attendance: 0.125, fuel: 0.0416, sanitation: 0.0416, water: 0.0416, electricity: 0.0416, housing: 0.0416, assets: 0.0416, aiLang: 0.125, aiInfra: 0.125 };
+    // 가중치 합 정규화
+    let w_sum = 0; for(let k in w_ai) w_sum += w_ai[k];
+    for(let k in w_ai) w_ai[k] /= w_sum;
+    const k_ai = 0.25;
+    const res_ai = calculateAF(households, w_ai, k_ai);
+
+    // 화면 결과 출력 업데이트
+    document.getElementById('res_H_c').innerText = (res_classic.H * 100).toFixed(1) + '%';
+    document.getElementById('res_A_c').innerText = (res_classic.A * 100).toFixed(1) + '%';
+    document.getElementById('res_M0_c').innerText = res_classic.M0.toFixed(4);
+
+    document.getElementById('res_H_a').innerText = (res_ai.H * 100).toFixed(1) + '%';
+    document.getElementById('res_A_a').innerText = (res_ai.A * 100).toFixed(1) + '%';
+    document.getElementById('res_M0_a').innerText = res_ai.M0.toFixed(4);
+}
+
+function calculateAF(households, weights, cutoff) {
+    let poorCount = 0;
+    let totalCensoredScore = 0;
+
+    const scores = households.map(hh => {
+        let score = 0;
+        for(let ind in weights) {
+            score += hh[ind] * weights[ind];
+        }
+        return score;
+    });
+
+    scores.forEach(score => {
+        if(score >= cutoff) {
+            poorCount++;
+            totalCensoredScore += score;
+        }
+    });
+
+    const H = poorCount / households.length;
+    const A = poorCount > 0 ? (totalCensoredScore / poorCount) : 0;
+    const M0 = H * A;
+
+    return { H, A, M0 };
+}
+
+// 최초 로드 시 기본 연산 실행
+window.onload = executeSimulation;
+</script>
+
+</body>
+</html>
